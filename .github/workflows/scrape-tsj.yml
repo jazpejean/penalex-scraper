@@ -1,0 +1,31 @@
+name: Scrape TSJ (Híbrido)
+
+on:
+  workflow_dispatch:
+    inputs:
+      sala:
+        description: 'Sala'
+        type: choice
+        options: [ambas, scon, scp]
+        default: ambas
+      anio:
+        description: 'Año (vacío = ventana reciente del año actual)'
+        type: string
+        default: ''
+  schedule:
+    - cron: '30 4 * * *'   # diario: mantiene la base actualizada automáticamente
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests
+      - name: Scrapear y enviar al Worker
+        env:
+          WORKER_URL: https://penalex-scraper.ignaciojazpe47.workers.dev
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+        run: python scraper_tsj.py --sala "${{ inputs.sala || 'ambas' }}" --anio "${{ inputs.anio || '' }}"

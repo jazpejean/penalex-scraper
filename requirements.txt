@@ -1,0 +1,4 @@
+curl_cffi
+playwright
+requests
+urllib3
