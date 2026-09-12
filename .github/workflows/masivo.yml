@@ -1,6 +1,8 @@
 name: Masivo TSJ
+
 on:
   workflow_dispatch:
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
@@ -18,7 +20,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: |
+      - name: Instalar dependencias
+        run: |
           pip install curl_cffi playwright requests urllib3
           python -m playwright install --with-deps chromium
       - name: Scrapear ${{ matrix.sala }} ${{ matrix.anio }}
