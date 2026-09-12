@@ -1,0 +1,29 @@
+name: Diag2 - curl_cffi
+on:
+  workflow_dispatch:
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install curl_cffi
+      - name: Probar curl_cffi desde GitHub
+        run: |
+          python3 - <<'PYEOF'
+          from curl_cffi import requests
+          
+          urls = [
+              "https://www.tsj.gob.ve/es/decisiones",
+              "https://historico.tsj.gob.ve/decisiones/scp/enero/332320-001-30124-2024-E24-1.HTML",
+              "https://www.google.com",
+          ]
+          for url in urls:
+              try:
+                  r = requests.get(url, impersonate="chrome120", timeout=30)
+                  print(f"{url} -> HTTP {r.status_code} ({len(r.content)} bytes)")
+              except Exception as e:
+                  print(f"{url} -> FAIL: {e}")
+          PYEOF
