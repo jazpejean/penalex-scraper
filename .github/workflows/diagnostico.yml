@@ -1,0 +1,34 @@
+name: Diagnostico TSJ
+on:
+  workflow_dispatch:
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Curl al portal
+        run: |
+          echo "=== HTTP Status ==="
+          curl -sk -o /tmp/portal.html -w "HTTP %{http_code}\n" \
+            -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36" \
+            -H "Accept-Language: es-VE,es;q=0.9" \
+            "https://www.tsj.gob.ve/es/decisiones"
+
+          echo ""
+          echo "=== Tamaño ==="
+          wc -c /tmp/portal.html
+
+          echo ""
+          echo "=== Primeros 500 chars ==="
+          head -c 500 /tmp/portal.html
+
+          echo ""
+          echo "=== Buscar #contentDisplayLista ==="
+          grep -o "contentDisplayLista" /tmp/portal.html || echo "NO ENCONTRADO"
+
+          echo ""
+          echo "=== Buscar Fortinet/Cloudflare ==="
+          grep -iE "fortinet|cloudflare|blocked|rate limit" /tmp/portal.html | head -5 || echo "no encontrado"
+
+          echo ""
+          echo "=== Titulo ==="
+          grep -oP "(?<=<title>)[^<]+" /tmp/portal.html | head -1
