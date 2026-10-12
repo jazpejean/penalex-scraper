@@ -1,0 +1,224 @@
+{
+ "ley_nombre": "LEY SOBRE EL HURTO Y ROBO DE VEHÍCULOS AUTOMOTORES",
+ "estructura": [
+  {
+   "libro": null,
+   "titulo": null,
+   "capitulo": null,
+   "seccion": null,
+   "articulos": [
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "1",
+     "encabezado": "",
+     "texto_principal": "El que se apodere de un vehículo automotor perteneciente a otra persona natural o jurídica con el propósito de obtener provecho para sí o para otro, sin el consentimiento de su dueño, será penado con prisión de cuatro a ocho años.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "2",
+     "encabezado": "Circunstancias Agravantes",
+     "texto_principal": "La pena a imponer para el hurto de vehículo automotor será de seis a diez años de prisión si el hecho punible se cometiere:",
+     "numerales_literales": [
+      "1. Sobre vehículos destinados al transporte público, colectivo o de carga.",
+      "2. Valiéndose de la actividad realizada por menores de edad.",
+      "3. Sobre vehículos expuestos a la confianza pública por necesidad, costumbre o destinación.",
+      "4. De noche o habiendo penetrado en cualquier lugar habitado o dependencia propiedad de otro.",
+      "5. Por dos o más personas que se hubieren reunido o puesto de acuerdo para realizarlo.",
+      "6. Sobre vehículos pertenecientes a los cuerpos policiales de seguridad pública o sobre vehículos destinados al transporte de valores.",
+      "7. Con escalamiento, llaves sustraídas o falsas, ganzúas o cualquier otro instrumento similar, o violando o superando seguridad electrónica u otras semejantes.",
+      "8. Aprovechando la confianza depositada por el dueño, poseedor o tenedor del vehículo.",
+      "9. Aprovechando situaciones de calamidad, infortunio o peligro común.",
+      "10. Por persona disfrazada, ilícitamente uniformada, usando indebidamente identificación falsa o hábito religioso."
+     ],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "3",
+     "encabezado": "Desvalijamiento de Vehículos Automotores",
+     "texto_principal": "Quienes sustraigan partes o piezas de un vehículo automotor perteneciente a otra persona, sin apoderarse del mismo, con el propósito de obtener provecho para sí o para otro, serán sancionados con pena de prisión de cuatro a ocho años. Igual pena se impondrá a quien detente, esconda o comercialice las partes o piezas sustraídas aún cuando no haya tomado parte en el delito.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "4",
+     "encabezado": "Tentativa de Hurto",
+     "texto_principal": "Quien iniciare la ejecución del delito de hurto de vehículo automotor, aún cuando no se produzca la consumación del mismo, será castigado con pena de dos a cuatro años de prisión.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "5",
+     "encabezado": "Robo de Vehículos Automotores",
+     "texto_principal": "El que por medio de violencia o amenazas de graves daños inminentes a personas o cosas, se apodere de un vehículo automotor con el propósito de obtener provecho para sí o para otro, será sancionado con pena de presidio de ocho a dieciséis años. La misma pena se aplicará cuando la violencia tenga lugar inmediatamente después del apoderamiento y haya sido empleada por el autor o el partícipe para asegurar su producto o impunidad.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "6",
+     "encabezado": "Circunstancias Agravantes",
+     "texto_principal": "La pena a imponer para el robo de vehículo automotor será de nueve a diecisiete años de presidio si el hecho punible se cometiere:",
+     "numerales_literales": [
+      "1. Por medio de amenazas a la vida.",
+      "2. Esgrimiendo como medio de amenaza cualquier tipo de arma capaz de atemorizar a la víctima, aún en el caso de que no siendo un arma, simule serla.",
+      "3. Por dos o más personas.",
+      "4. Por persona disfrazada, ilícitamente uniformada, usando indebidamente identificación falsa o hábito religioso.",
+      "5. Por medio de ataque a la libertad individual, en cuyo caso se estimará siempre la existencia de un concurso real de delitos.",
+      "6. Valiéndose de la actividad realizada por menores de edad.",
+      "7. Aprovechando situaciones de calamidad, infortunio o peligro común.",
+      "8. Sobre vehículos automotores que estén destinados al transporte público, colectivo o de carga.",
+      "9. Sobre vehículo automotor que pertenezca a los cuerpos policiales de seguridad pública o sobre vehículos destinados al transporte de valores.",
+      "10. De noche o en lugar despoblado o solitario.",
+      "11. Mediante penetración o permanencia arbitraria, engañosa o clandestina en lugar habitado o en sus dependencias inmediatas, aunque allí no se encuentren sus moradores.",
+      "12. Aprovechándose de las condiciones de inferioridad física o indefensión de la víctima."
+     ],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "7",
+     "encabezado": "Tentativa de Robo",
+     "texto_principal": "El que iniciare la ejecución de un delito de robo de vehículo automotor, aún cuando no logre su consumación, será castigado con pena de seis a siete años de presidio.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "8",
+     "encabezado": "Cambio Ilícito de Placas de Vehículos Automotores",
+     "texto_principal": "Quienes sustraigan, cambien o alteren ilícitamente las placas de vehículos automotores, de su serial de carrocería o de motor, para asegurar. la impunidad de los autores de delitos de hurto o robo, o de sus cómplices, o para obtener un provecho económico, para sí o para un tercero, serán sancionados con pena de dos a cuatro años de prisión.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "9",
+     "encabezado": "Aprovechamiento de Vehículos Provenientes de Hurto o Robo",
+     "texto_principal": "Quien teniendo conocimiento de que un vehículo automotor es proveniente de hurto o robo, lo adquiere, recibe o esconde o interviene de cualquier forma para que otro lo adquiera, reciba o esconda, sin haber tomado parte en el delito mismo ni como autor ni como cómplice, será castigado con pena de tres a cinco años de prisión. Quien realizare cualesquiera de las acciones previstas en esta norma de manera habitual, será castigado con prisión de cuatro a seis años.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "10",
+     "encabezado": "Entrega de Vehículos Recuperados",
+     "texto_principal": "Los vehículos automotores objeto de robo o hurto recuperados por cualquier autoridad de policía, deberán ser entregados por éstas de inmediato al Cuerpo Técnico de Policía Judicial para su depósito, previa notificación al Ministerio Público. El jefe de la delegación de dicho Cuerpo deberá, en un lapso no mayor de ocho horas, remitir al Ministerio Público el listado completo de los vehículos recuperados por dicho organismo o por cualquier otra autoridad policial. Los vehículos se entregarán al propietario por orden del juez de control o del Ministerio Público, en cualquier estado del proceso, inclusive en la fase de investigación, una vez comprobada su condición de propietario. Si se presentan diversas personas que reclamen el vehículo recuperado, el Cuerpo Técnico de Policía Judicial lo participará al Ministerio Público, el cual, con fundamento en el numeral 12 del artículo 105 y segunda parte del artículo 320 del Código Orgánico Procesal Penal, solicitará al juez de control competente que fije la audiencia en la que decidirá a quién devolver el vehículo automotor. Dicha audiencia deberá realizarse dentro de un lapso no menor de diez días ni mayor de veinte, contados a partir de la solicitud. El Ministerio Público impondrá sanción disciplinaria al Jefe de la Delegación del Cuerpo Técnico de Policía Judicial que no cumpliere con los deberes que le impone esta norma, pudiendo solicitar su destitución ante su superior inmediato.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "11",
+     "encabezado": "Publicación del Listado de Vehículos Recuperados",
+     "texto_principal": "El jefe del Cuerpo Técnico de Policía Judicial ordenará la publicación mensual, en dos de los diarios de mayor circulación nacional, de la lista de todos aquellos vehículos que estén bajo la custodia de ese cuerpo policial, con indicación del lugar donde se encuentran los mismos. Esta lista se fijará también en lugar visible y de fácil acceso público en todas las dependencias del Cuerpo Técnico de Policía Judicial y en ella deberá advertirse que transcurridos ciento veinte días de su publicación si no hubieren comparecido los propietarios o representantes, dichos vehículos serán puestos a la orden del Fisco Nacional, por órgano del Ministerio de Finanzas. La falta de la publicación referida en este artículo o la publicación incompleta de la lista correspondiente, dará lugar a la destitución del funcionario encargado de efectuarla, a solicitud del Ministerio Público.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "12",
+     "encabezado": "Vehículos Robados en Estacionamientos Públicos",
+     "texto_principal": "Todo vehículo automotor que permanezca aparcado por más de cinco días continuos en un estacionamiento público, sin causa justificada, de conformidad con el Reglamento de la presente Ley, se tendrá como de dudosa procedencia, a menos que el propietario tenga un puesto fijo en dicho estacionamiento. Los responsables de los estacionamientos públicos deberán informar de ese hecho al Cuerpo Técnico de Policía Judicial al término de los cinco días señalados en el párrafo anterior, proporcionando los datos que identifiquen al vehículo, a fin de que se verifique si el mismo se encuentra o no solicitado por motivo de robo o hurto. La salida del vehículo de un estacionamiento con posterioridad al término señalado en este artículo, sólo procederá previa demostración ante el responsable del estacionamiento, de la condición de propietario del mismo.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "13",
+     "encabezado": "Entrega de Vehículos Recuperados en Estacionamientos Públicos.",
+     "texto_principal": "En el caso del artículo anterior, si el vehículo se encontrare solicitado por motivo de robo o hurto, el Cuerpo Técnico de Policía Judicial conjuntamente con un Fiscal del Ministerio Público, solicitará al juez de control una orden para que el vehículo se mantenga a la disposición del Cuerpo Técnico de Policía Judicial sin retirarlo del estacionamiento público en que se encontrare, todo ello a los fines de su entrega efectiva al propietario legítimo del vehículo. En el supuesto anterior, el vehículo se incluirá en la lista correspondiente a las publicaciones en prensa a que se refiere el artículo 11 de esta Ley, en la cual se deberá señalar el estacionamiento donde se encuentra.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "14",
+     "encabezado": "Sanción a Estacionamientos Públicos",
+     "texto_principal": "El incumplimiento de las obligaciones señaladas en los artículos 12 y 13 de esta Ley, por parte de los responsables de los estacionamientos públicos, dará lugar a la aplicación de una multa al establecimiento, correspondiente veinte unidades tributarias (20 U.T.), la cual se podrá elevar hasta cuarenta unidades tributarias (40 U.T.), en caso de reincidencia. Dicha multa será impuesta por el juez de control competente y deberá pagarse al Fisco Nacional. Cuando exista incumplimiento reiterado de tales obligaciones por el estacionamiento, el Cuerpo Técnico de Policía Judicial o el Ministerio Público podrá solicitar ante el juez de control competente, el cierre temporal del estacionamiento hasta por un mes.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "15",
+     "encabezado": "Vehículos Recuperados No Reclamados",
+     "texto_principal": "Si ninguna persona ha reclamado derechos sobre un vehículo recuperado dentro de los ciento veinte días señalados en el artículo 11 de esta Ley, el Ministerio Público solicitará al juez de control correspondiente que el vehículo se ponga a la orden del Fisco Nacional, por órgano del Ministerio de Finanzas. Las personas que tuvieren derechos sobre los vehículos que están a la orden del Fisco Nacional, dentro de los ciento ochenta días siguientes al vencimiento del lapso señalado en el párrafo anterior, podrán reclamar ante el Ministerio Público su derecho. El Ministerio Público solicitará al juez de control que emita orden al Fisco Nacional, por órgano del Ministerio de Finanzas, a fin de que le sea entregado el vehículo a su propietario. Si pasado ese lapso no se reclamare derecho alguno sobre el vehículo, el Fisco Nacional podrá disponer del mismo, conforme lo establezca el Reglamento de esta Ley.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "16",
+     "encabezado": "Disposición Derogatoria",
+     "texto_principal": "Quedan derogadas todas las disposiciones legales y reglamentarias que contravengan lo establecido en esta Ley.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    },
+    {
+     "tipo_norma": "Artículo",
+     "identificador": "17",
+     "encabezado": "Entrada en Vigencia",
+     "texto_principal": "La presente Ley entrará en vigencia en la fecha de su publicación en la Gaceta Oficial de la República Bolivariana de Venezuela.",
+     "numerales_literales": [],
+     "paragrafos": [],
+     "estado": "vigente",
+     "nota_jurisprudencial": null,
+     "sentencias_relacionadas": []
+    }
+   ]
+  }
+ ]
+}
