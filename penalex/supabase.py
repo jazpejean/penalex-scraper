@@ -231,6 +231,7 @@ class Supabase:
         params = {
             "select": "id,sala,anio,fecha,url_tsj,r2_txt_key",
             "analyzed_at": "is.null",
+            "es_jurisprudencia": "not.is.true",
             "order": "id",
         }
         if anio:
