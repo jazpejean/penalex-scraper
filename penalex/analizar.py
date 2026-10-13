@@ -43,21 +43,12 @@ class R2:
 def procesar_pendiente(sb: Supabase, ia: AnalizadorIA, r2: R2, qdrant: Optional[Qdrant],
                        emb: Optional[EmbeddingsRemotos], fila: dict) -> str:
     """Procesa una sentencia pendiente.
-    Devuelve 'ok' | 'ia_falló' | 'sin_txt' | 'tramite'."""
+    Devuelve 'ok' | 'ia_falló' | 'sin_txt'."""
     sid = fila["id"]
     r2_key = fila.get("r2_txt_key")
     texto = r2.descargar_txt(r2_key) if r2_key else None
     if not texto:
         return "sin_txt"
-
-    # Filtro de MERO TRÁMITE por extensión: las decisiones de mera sustanciación
-    # (autos: notificar, colocar a la orden, solicitar información...) son
-    # sistemáticamente cortas y casi nunca sientan doctrina (<3% en <3k chars).
-    # Se marcan sin gastar IA (los tokens/RPD del lote se van a lo que importa).
-    if len(texto) < ia.cfg.min_chars_analisis:
-        sb.marcar_mero_tramite(sid)
-        print(f"      [tramite] {sid}: {len(texto)} chars — sin IA", flush=True)
-        return "tramite"
 
     t0 = time.time()
     ia_data = ia.analizar(texto)
