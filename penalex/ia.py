@@ -12,7 +12,7 @@ import requests
 
 from .config import Config
 from .prompts import PROMPT_SISTEMA, construir_prompt
-from .util import evidencia_coincide
+from .util import evidencia_coincide, referencia_coincide
 
 INSTRUMENTOS_VALIDOS = {
     "copp": "COPP",
@@ -75,7 +75,14 @@ def _extraer_json(respuesta: str) -> dict:
 
 
 def validar_criterios(data: dict, texto: str) -> list[dict]:
-    """Filtra criterios: solo los que tienen cita textual verificable en el documento."""
+    """Filtra criterios: solo los que tienen cita textual verificable en el documento.
+
+    Anti-alucinación garantizada por código:
+    - parrafo_evidencia DEBE ser substring literal del texto fuente.
+    - referencia_citada (si la IA la declara) DEBE aparecer literalmente en el
+      texto; si la IA la inventó, se descarta el criterio (nunca se guarda una
+      referencia falsa que el redactor podría citar).
+    """
     validas = []
     for d in data.get("criterios", []) or []:
         if not isinstance(d, dict):
@@ -85,6 +92,15 @@ def validar_criterios(data: dict, texto: str) -> list[dict]:
             continue
         if not evidencia_coincide(texto, ev):
             continue
+        ref = (d.get("referencia_citada") or "").strip()
+        if ref:
+            # La referencia de la sentencia citada debe verificarse por
+            # componentes (número+fecha+sala+ponente presentes en el texto).
+            if not referencia_coincide(texto, ref):
+                continue
+            d["referencia_citada"] = ref[:250]
+        else:
+            d["referencia_citada"] = None
         d["instrumento"] = normalizar_instrumento(d.get("instrumento"))
         d["articulo_numero"] = limpiar_articulo(d.get("articulo_numero"))
         d["tipo"] = d.get("tipo") if d.get("tipo") in TIPOS_VALIDOS else "interpretacion"
@@ -170,7 +186,7 @@ class AnalizadorIA:
                 {"role": "user", "content": prompt},
             ],
             "response_format": {"type": "json_object"},
-            "max_tokens": 2048,
+            "max_tokens": 8192,
             "temperature": 0,
         }
         ultimo = None

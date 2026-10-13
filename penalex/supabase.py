@@ -152,18 +152,30 @@ class Supabase:
         return r.ok
 
     def guardar_doctrina(self, sentencia_id: str, doctrina: dict) -> Optional[str]:
+        payload = {
+            "sentencia_id": sentencia_id,
+            "texto_ratio": (doctrina.get("texto_ratio") or "")[:800],
+            "tipo": doctrina.get("tipo", "interpretacion"),
+            "parrafo_evidencia": doctrina.get("parrafo_evidencia", ""),
+            "instrumento": doctrina.get("instrumento"),
+            "articulo_numero": doctrina.get("articulo_numero"),
+        }
+        ref = doctrina.get("referencia_citada")
+        if ref:
+            payload["referencia_citada"] = ref
         r = self._r(
             "doctrinas", "POST",
             headers={"Prefer": "return=representation"},
-            json={
-                "sentencia_id": sentencia_id,
-                "texto_ratio": (doctrina.get("texto_ratio") or "")[:800],
-                "tipo": doctrina.get("tipo", "interpretacion"),
-                "parrafo_evidencia": doctrina.get("parrafo_evidencia", ""),
-                "instrumento": doctrina.get("instrumento"),
-                "articulo_numero": doctrina.get("articulo_numero"),
-            },
+            json=payload,
         )
+        if not r.ok and ref and r.status_code == 400:
+            # Migración de referencia_citada pendiente: degradar sin ella.
+            del payload["referencia_citada"]
+            r = self._r(
+                "doctrinas", "POST",
+                headers={"Prefer": "return=representation"},
+                json=payload,
+            )
         if r.ok and r.json():
             return r.json()[0]["id"]
         return None
