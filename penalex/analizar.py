@@ -152,9 +152,16 @@ def analizar_pendientes(sala: Optional[str] = None, anio: Optional[int] = None,
                                   excluir=excluir)
     print(f"⏳ {len(pendientes)} sentencias pendientes de análisis", flush=True)
     res = {"ok": 0, "ia_falló": 0, "sin_txt": 0, "tramite": 0,
-           "ids_falladas": [],
+           "ids_falladas": [], "rate_limited": False,
            "sin_pendientes": len(pendientes) == 0}
     for fila in pendientes:
+        if ia.rate_limited:
+            # RPD del día agotado: cortar la pasada; los docs restantes
+            # siguen pendientes y el launcher los reintenta tras el reset.
+            res["rate_limited"] = True
+            print("⛔ rate limit agotado (RPD diario) — cortando pasada, "
+                  "resto pendiente para el reset", flush=True)
+            break
         estado = procesar_pendiente(sb, ia, r2, qd, emb, fila)
         res[estado] = res.get(estado, 0) + 1
         if estado != "ok":

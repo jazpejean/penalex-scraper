@@ -44,11 +44,20 @@ def main():
                   f"fallos={fall} "
                   f"pendientes_nuevos={not res.get('sin_pendientes')}",
                   flush=True)
+            if res.get("rate_limited"):
+                # RPD diario del plan gratuito agotado: no tiene sentido seguir
+                # con el resto de años (todos fallarían igual). Salir; el
+                # launcher duerme y reintenta tras el reset.
+                print(f"  ⛔ RPD agotado en {sala}/{anio} — "
+                      f"saliendo para esperar el reset", flush=True)
+                break
             if res.get("sin_pendientes") or (ok == 0 and fall == 0):
                 print(f"  {sala}/{anio}: sin pendientes nuevos — "
                       f"{len(falladas)} fallados quedan para otro run",
                       flush=True)
                 break
+        if res.get("rate_limited"):
+            break  # no seguir con más años; esperar al reset
         # salir pronto si el año no tenía nada
     print(f"ANALIZAR_DONE {sala} {ini}-{fin}: ok={total_ok} fallos={total_fall}",
           flush=True)

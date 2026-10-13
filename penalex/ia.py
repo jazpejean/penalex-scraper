@@ -107,6 +107,10 @@ class AnalizadorIA:
         self.cfg = cfg
         self.timeout = timeout
         self.reintentos = reintentos
+        # True cuando el proveedor devuelve 429 de forma persistente (RPD del
+        # día agotado en el plan gratuito): el batch debe CORTAR la pasada y
+        # esperar al reset en vez de fallar doc por doc durante horas.
+        self.rate_limited = False
         self._s = requests.Session()
         # Gemini gana si está presente su key; si no, Workers AI (fallback).
         if cfg.gemini_api_key:
@@ -184,14 +188,16 @@ class AnalizadorIA:
                     return data
                 ultimo = f"HTTP {r.status_code}: {r.text[:120]}"
                 if r.status_code == 429:
-                    # rate limit (techo ~38 req/min): con ~19 procesos y ritmo
-                    # cercano al techo, esperas cortas bastan; largas colapsan
-                    # la tasa efectiva. 5 esperas máx; el doc queda pendiente y
-                    # la pasada siguiente lo reintenta.
-                    if i >= 5:
+                    # rate limit. Plan gratuito: RPD diario limitado; cuando se
+                    # agota, TODAS las llamadas devuelven 429 hasta el reset.
+                    # Reintentar mucho aquí quema minutos en vano: un solo
+                    # reintento corto (podría ser un pico) y si persiste,
+                    # marcamos rate_limited: la pasada entera se corta y el
+                    # launcher espera al reset (los docs quedan pendientes).
+                    if i >= 1:
+                        self.rate_limited = True
                         return None
-                    espera = min(8 + i * 12 + random.randint(0, 8), 90)
-                    time.sleep(espera)
+                    time.sleep(8 + random.randint(0, 4))
                     continue
                 if r.status_code in (500, 503):
                     if i >= 3:
