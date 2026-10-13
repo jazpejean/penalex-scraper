@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """scraper_juri.py — Marca es_jurisprudencia y REEMPLAZA doctrinas con los
-extractos OFICIALES de la página de jurisprudencias de la Sala Constitucional.
+extractos OFICIALES de la página de jurisprudencias del TSJ.
+
+Salas soportadas:
+  - scon (Sala Constitucional): https://www.tsj.gob.ve/es/web/tsj/juriprudencias#1
+  - scp  (Sala de Casación Penal): https://www.tsj.gob.ve/es/web/tsj/juriprudencias#5
 
 Mecánica (validada con HTML real del portal):
-  https://www.tsj.gob.ve/es/web/tsj/juriprudencias#1
   - `#select_years`: años que tienen jurisprudencias (los que aparecen).
   - `a.numero-dia` con onclick fire3('DD/MM/AAAA','005'): días con criterios.
   - Al hacer clic se carga el día con divs `noti_N`, cada uno = UN criterio:
-      * URL a historico.tsj.gob.ve/decisiones/scon/... -> id de la sentencia
+      * URL a historico.tsj.gob.ve/decisiones/<sala>/... -> id de la sentencia
       * "N° de Expediente: XX-XXXX N° de Sentencia: NN"
       * Tema, Materia, Asunto
       * <div class="hide"> = EXTRACTO OFICIAL del criterio (la Sala redactó)
@@ -20,7 +23,8 @@ Para cada id de sentencia único del día:
     oficiales (tipo='jurisprudencia'), no se reescriben (ideal para cron).
 
 Uso:
-  python scraper_juri.py [--aplicar] [--max-dias N] [--anio 2000]
+  python scraper_juri.py --sala scp [--aplicar] [--max-dias N] [--anio 2000]
+  python scraper_juri.py --sala scon [--aplicar] [--max-dias N] [--anio 2000]
   (sin --aplicar = modo dry-run: solo muestra qué se marcaría/reemplazaría)
 """
 import argparse, asyncio, re, sys, html as H
@@ -29,15 +33,18 @@ sys.path.insert(0, ".")
 from penalex.config import Config
 from penalex.supabase import Supabase
 
-PORTAL_JURI = "https://www.tsj.gob.ve/es/web/tsj/juriprudencias#1"
-SALA = "scon"
+SALAS = {
+    "scon": "https://www.tsj.gob.ve/es/web/tsj/juriprudencias#1",
+    "scp": "https://www.tsj.gob.ve/es/web/tsj/juriprudencias#5",
+}
 
 RE_URL = re.compile(r'https://historico\.tsj\.gob\.ve/decisiones/[^"&<>\s]+\.HTM', re.I)
-RE_REF = re.compile(r'N°\s*de\s*Expediente:\s*([\d-]+)\s*N°\s*de\s*Sentencia:\s*(\d+)')
+RE_REF = re.compile(r'N°\s*de\s*Expediente:\s*([A-Za-z]{0,4}\d{1,4}[\d-]*)\s*N°\s*de\s*Sentencia:\s*(\d+)')
 RE_TEMA = re.compile(r'<b>Tema:</b>\s*(.*?)<br')
 RE_MATERIA = re.compile(r'<b>Materia:</b>\s*(.*?)<br')
 RE_ASUNTO = re.compile(r'<b>Asunto:</b>\s*(.*?)<br')
 RE_EXTRACTO = re.compile(r'<div class="hide">(.*?)</div>', re.S)
+RE_NOTI = re.compile(r'<div id="noti_\d+" class="comment cf">', re.I)
 
 
 def id_de_url(u: str) -> str:
@@ -76,10 +83,16 @@ def extraer_criterios(html_dia: str) -> dict:
 
     Cada criterio: {id, num_sentencia, expediente, tema, materia, asunto,
     extracto, url}. Varios criterios pueden apuntar a la MISMA sentencia
-    (una sentencia puede tener varios criterios jurisprudenciales)."""
-    bloques = re.findall(r'<div id="noti_\d+" class="comment cf">(.*?)</div>\s*</div>\s*</div>', html_dia, re.S)
+    (una sentencia puede tener varios criterios jurisprudenciales).
+
+    El parseo divide el HTML por el marcador <div id="noti_N" class="comment
+    cf"> (no depende del cierre exacto de los divs, que varía entre salas)."""
+    marcadores = list(RE_NOTI.finditer(html_dia))
     por_id: dict = {}
-    for b in bloques:
+    for k, m in enumerate(marcadores):
+        inicio = m.end()
+        fin = marcadores[k + 1].start() if k + 1 < len(marcadores) else len(html_dia)
+        b = html_dia[inicio:fin]
         m_url = RE_URL.search(b)
         if not m_url:
             continue
@@ -107,11 +120,14 @@ def extraer_criterios(html_dia: str) -> dict:
     return por_id
 
 
-async def recorrer(sb: Supabase, aplicar: bool, max_dias: int, anio_filtro: int | None):
+async def recorrer(sb: Supabase, sala: str, aplicar: bool, max_dias: int, anio_filtro: int | None):
     from playwright.async_api import async_playwright
     marcadas = reemplazadas = no_encontradas = 0
     no_encontradas_ids: list[str] = []
     usadas: set = set()
+
+    # Códigos de sala del portlet (li.nombre-sala onclick fire('XXX')).
+    CODIGOS_SALA = {"scon": "005", "scp": "003"}
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True, args=["--headless=new"])
@@ -121,14 +137,56 @@ async def recorrer(sb: Supabase, aplicar: bool, max_dias: int, anio_filtro: int 
                         "Chrome/120.0.0.0 Safari/537.36"),
         )
         page = await ctx.new_page()
-        print("🌐 Cargando portal de jurisprudencias...", flush=True)
-        await page.goto(PORTAL_JURI, wait_until="domcontentloaded", timeout=120000)
-        await page.wait_for_selector("#select_years", state="attached", timeout=90000)
-        await page.wait_for_timeout(4000)
+        print(f"🌐 Cargando portal de jurisprudencias {sala.upper()}...", flush=True)
+        # El fragmento #N no basta: hay que hacer clic en la sala del portlet
+        # (dispara fire('XXX') -> carga el select de años en #years).
+        url = SALAS[sala].split("#")[0]
+        for intento in range(3):
+            try:
+                await page.goto(url, wait_until="domcontentloaded", timeout=120000)
+                break
+            except Exception:
+                await page.wait_for_timeout(5000)
+        await page.wait_for_selector("#years", state="attached", timeout=120000)
+        await page.wait_for_timeout(3000)
+
+        # 1) clic en la sala (por código o por posición). El portal es lento:
+        #    esperar a que la lista de salas esté visible antes de hacer clic.
+        selector_sala = f'li.nombre-sala[onclick*="{CODIGOS_SALA[sala]}"]'
+        try:
+            await page.wait_for_selector(selector_sala, state="visible", timeout=60000)
+            await page.click(selector_sala)
+            print(f"✅ clic en sala {sala} ({CODIGOS_SALA[sala]})", flush=True)
+        except Exception as e:
+            print(f"⚠️ no encontré la sala {sala}: {e}", flush=True)
+
+        # 2) esperar el select de años (se crea dinámico dentro de #years).
+        #    Reintentar la carga si el portal no respondió.
+        select_ok = False
+        for intento in range(3):
+            try:
+                await page.wait_for_selector("#years select", state="attached", timeout=45000)
+                await page.wait_for_timeout(2000)
+                select_ok = True
+                break
+            except Exception:
+                print(f"   ⚠️ intento {intento+1}: select de años no apareció; recargando...", flush=True)
+                try:
+                    await page.reload(wait_until="domcontentloaded", timeout=120000)
+                    await page.wait_for_timeout(3000)
+                    await page.wait_for_selector(selector_sala, state="visible", timeout=60000)
+                    await page.click(selector_sala)
+                    await page.wait_for_timeout(4000)
+                except Exception:
+                    pass
+        if not select_ok:
+            print("❌ No se pudo cargar el select de años (portal inestable).", flush=True)
+            await browser.close()
+            return marcadas, reemplazadas, no_encontradas
 
         # Años disponibles = los que tienen jurisprudencias (según el portal).
         opciones = await page.eval_on_selector_all(
-            "#select_years option",
+            "#years select option",
             "opts => opts.map(o => o.value)",
         )
         anios = [int(a) for a in opciones if a.strip().isdigit()]
@@ -138,8 +196,8 @@ async def recorrer(sb: Supabase, aplicar: bool, max_dias: int, anio_filtro: int 
 
         for anio in anios:
             try:
-                await page.select_option("#select_years", str(anio), timeout=30000)
-                await page.wait_for_timeout(4000)
+                await page.select_option("#years select", str(anio), timeout=30000)
+                await page.wait_for_timeout(5000)
             except Exception as e:
                 print(f"   ⚠️ año {anio}: {e}", flush=True)
                 continue
@@ -149,7 +207,7 @@ async def recorrer(sb: Supabase, aplicar: bool, max_dias: int, anio_filtro: int 
             for i, link in enumerate(dias[:max_dias]):
                 try:
                     await link.click()
-                    await page.wait_for_timeout(3500)
+                    await page.wait_for_timeout(4000)
                 except Exception as e:
                     print(f"      día {i+1} fallo click: {e}", flush=True)
                     continue
@@ -226,7 +284,9 @@ async def recorrer(sb: Supabase, aplicar: bool, max_dias: int, anio_filtro: int 
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Marca jurisprudencias oficiales de la SCON")
+    ap = argparse.ArgumentParser(description="Marca jurisprudencias oficiales del TSJ (SCON o SCP)")
+    ap.add_argument("--sala", choices=["scon", "scp"], default="scon",
+                    help="sala a procesar (default: scon)")
     ap.add_argument("--aplicar", action="store_true", help="aplicar cambios (default: dry-run)")
     ap.add_argument("--max-dias", type=int, default=999999)
     ap.add_argument("--anio", type=int, default=None)
@@ -236,7 +296,7 @@ def main():
     cfg.requerir("supabase")
     sb = Supabase(cfg)
     marcadas, reemplazadas, no_enc = asyncio.run(
-        recorrer(sb, args.aplicar, args.max_dias, args.anio)
+        recorrer(sb, args.sala, args.aplicar, args.max_dias, args.anio)
     )
     if marcadas == 0 and no_enc == 0:
         print("Nada nuevo (¿portal sin cambios o bloqueado?).")
