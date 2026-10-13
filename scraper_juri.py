@@ -16,6 +16,8 @@ Para cada id de sentencia único del día:
   - Si existe en Supabase: PATCH es_jurisprudencia=true; BORRA sus doctrinas
     (las de IA) y guarda CADA extracto oficial como doctrina (reemplazo).
   - Si NO existe: se registra en el log (lista de pendientes).
+  - Idempotente: si la sentencia ya tiene EXACTAMENTE los mismos extractos
+    oficiales (tipo='jurisprudencia'), no se reescriben (ideal para cron).
 
 Uso:
   python scraper_juri.py [--aplicar] [--max-dias N] [--anio 2000]
@@ -51,6 +53,22 @@ def limpio(t: str) -> str:
     t = re.sub(r'<[^>]+>', ' ', t)
     t = H.unescape(t)
     return re.sub(r'\s+', ' ', t).strip()
+
+
+def _normalizar(t: str) -> str:
+    """Compara extractos ignorando mayúsculas, espacios y puntuación."""
+    return re.sub(r'[\s.,;:¡!¿?«»"\'()\-]+', ' ', (t or '').lower()).strip()
+
+
+def _extractos_oficiales_existentes(sb: Supabase, sid: str) -> set:
+    """Extractos oficiales (tipo='jurisprudencia') que ya tiene la sentencia."""
+    r = sb._r("doctrinas", "GET", params={
+        "select": "parrafo_evidencia", "sentencia_id": f"eq.{sid}", "tipo": "eq.jurisprudencia",
+        "limit": "50",
+    })
+    if not r.ok:
+        return set()
+    return {_normalizar(d.get("parrafo_evidencia") or "") for d in r.json()}
 
 
 def extraer_criterios(html_dia: str) -> dict:
@@ -156,11 +174,22 @@ async def recorrer(sb: Supabase, aplicar: bool, max_dias: int, anio_filtro: int 
                         print(f"      ❌ {sid}: NO está en la BD", flush=True)
                         continue
 
+                    # Idempotencia: comparar con los extractos oficiales que ya
+                    # tiene la sentencia. Si son los mismos, no reescribir.
+                    nuevos = [_normalizar(c["extracto"]) for c in lista]
+                    existentes = _extractos_oficiales_existentes(sb, sid)
+                    pendientes = [c for c, n in zip(lista, nuevos) if n not in existentes]
+
+                    if not pendientes:
+                        print(f"      ✅ {sid}: ya tenía los {len(lista)} criterios oficiales (sin cambios)", flush=True)
+                        continue
+
                     print(f"      ✅ {sid}: {len(lista)} criterios oficiales "
+                          f"({len(pendientes)} nuevos) "
                           f"{'(APLICARÍA)' if not aplicar else '(reemplazando doctrinas IA)'}", flush=True)
                     if not aplicar:
                         marcadas += 1
-                        reemplazadas += len(lista)
+                        reemplazadas += len(pendientes)
                         continue
 
                     # 1) marcar es_jurisprudencia
@@ -169,9 +198,10 @@ async def recorrer(sb: Supabase, aplicar: bool, max_dias: int, anio_filtro: int 
                                 json={"es_jurisprudencia": True})
                     if not ok1.ok:
                         print(f"      ⚠️ no se pudo marcar {sid}: {ok1.status_code}", flush=True)
-                    # 2) borrar doctrinas IA previas (reemplazo)
+                    # 2) borrar doctrinas previas (reemplazo: oficiales iguales
+                    #    se reinsertan iguales; IA y obsoletos desaparecen)
                     sb.borrar_doctrinas(sid)
-                    # 3) guardar cada extracto oficial como doctrina
+                    # 3) guardar CADA extracto oficial como doctrina
                     for c in lista:
                         sb.guardar_doctrina(sid, {
                             "texto_ratio": c["extracto"][:3000],
@@ -179,7 +209,7 @@ async def recorrer(sb: Supabase, aplicar: bool, max_dias: int, anio_filtro: int 
                             "tipo": "jurisprudencia",
                         })
                     marcadas += 1
-                    reemplazadas += len(lista)
+                    reemplazadas += len(pendientes)
 
         await browser.close()
 

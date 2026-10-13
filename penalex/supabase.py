@@ -154,7 +154,7 @@ class Supabase:
     def guardar_doctrina(self, sentencia_id: str, doctrina: dict) -> Optional[str]:
         payload = {
             "sentencia_id": sentencia_id,
-            "texto_ratio": (doctrina.get("texto_ratio") or "")[:800],
+            "texto_ratio": (doctrina.get("texto_ratio") or "")[:3000],
             "tipo": doctrina.get("tipo", "interpretacion"),
             "parrafo_evidencia": doctrina.get("parrafo_evidencia", ""),
             "instrumento": doctrina.get("instrumento"),
