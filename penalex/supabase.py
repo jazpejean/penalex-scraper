@@ -98,7 +98,9 @@ class Supabase:
         payload = {
             "extracto": (ia_data.get("extracto") or "")[:500],
             "ratio_decidendi": str(ratio).strip()[:3000] if ratio else None,
-            "es_jurisprudencia": bool(ia_data.get("criterios") or ia_data.get("doctrinas")),
+            # es_jurisprudencia NO se toca aquí: todas son sentencias; el flag
+            # lo pondrá el scraper de jurisprudencia del usuario cuando corra
+            # sobre las mismas sentencias (según su definición del proyecto).
             "analyzed_at": datetime.now(timezone.utc).isoformat(),
         }
         r = self._r(
