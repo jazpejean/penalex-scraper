@@ -62,6 +62,7 @@ class Config:
     cf_account_id: str = DEFAULT_CF_ACCOUNT_ID
     cf_api_key: Optional[str] = None
     gemini_api_key: Optional[str] = None
+    gemini_api_keys: list = field(default_factory=list)  # varias keys gratis (RPD xN)
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai"
     gemini_model: str = "gemini-flash-lite-latest"
     max_chars_texto: int = 60000
@@ -108,6 +109,12 @@ class Config:
             reintentos=int(os.environ.get("REINTENTOS", "4")),
             dry_run=os.environ.get("DRY_RUN", "").lower() in ("1", "true", "yes"),
         )
+        # GEMINI_API_KEY puede traer varias keys (separadas por coma/espacio):
+        # el plan gratuito da ~230 RPD por key; N keys => N×230/día.
+        raw = (os.environ.get("GEMINI_API_KEY") or "").replace("\n", ",")
+        keys = [k.strip() for k in raw.split(",") if k.strip()]
+        c.gemini_api_keys = keys
+        c.gemini_api_key = keys[0] if keys else c.gemini_api_key
         c._requeridos = {
             "scrape": ["worker_url", "ingest_token"],
             "ia": [("cf_api_key", "gemini_api_key")],

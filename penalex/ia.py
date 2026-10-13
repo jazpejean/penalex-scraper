@@ -107,16 +107,20 @@ class AnalizadorIA:
         self.cfg = cfg
         self.timeout = timeout
         self.reintentos = reintentos
-        # True cuando el proveedor devuelve 429 de forma persistente (RPD del
-        # día agotado en el plan gratuito): el batch debe CORTAR la pasada y
-        # esperar al reset en vez de fallar doc por doc durante horas.
+        # True cuando TODAS las keys del proveedor devuelven 429 de forma
+        # persistente (RPD del día agotado en el plan gratuito): el batch debe
+        # CORTAR la pasada y esperar al reset en vez de fallar doc por doc.
         self.rate_limited = False
         self._s = requests.Session()
         # Gemini gana si está presente su key; si no, Workers AI (fallback).
-        if cfg.gemini_api_key:
+        if cfg.gemini_api_keys:
             self.proveedor = "gemini"
+            # Rotación de keys gratis: cada key tiene ~230 RPD/día;
+            # N keys => N×230 llamadas diarias antes del corte.
+            self._keys = list(cfg.gemini_api_keys)
+            self._key_idx = 0
             self._s.headers.update({
-                "Authorization": f"Bearer {cfg.gemini_api_key}",
+                "Authorization": f"Bearer {self._keys[0]}",
                 "Content-Type": "application/json",
             })
         else:
@@ -125,6 +129,19 @@ class AnalizadorIA:
                 "Authorization": f"Bearer {cfg.cf_api_key}",
                 "Content-Type": "application/json",
             })
+
+    def _rotar_key(self) -> bool:
+        """Cambia a la siguiente key Gemini. False si todas quedaron agotadas."""
+        if self.proveedor != "gemini" or not self._keys:
+            return False
+        if self._key_idx + 1 < len(self._keys):
+            self._key_idx += 1
+            self._s.headers.update({
+                "Authorization": f"Bearer {self._keys[self._key_idx]}"})
+            print(f"      [key] rotando a key #{self._key_idx + 1} "
+                  f"de {len(self._keys)}", flush=True)
+            return True
+        return False
 
     def _chat_url(self, modelo: Optional[str]) -> str:
         """Endpoint del proveedor activo."""
@@ -188,17 +205,14 @@ class AnalizadorIA:
                     return data
                 ultimo = f"HTTP {r.status_code}: {r.text[:120]}"
                 if r.status_code == 429:
-                    # rate limit. Plan gratuito: RPD diario limitado; cuando se
-                    # agota, TODAS las llamadas devuelven 429 hasta el reset.
-                    # Reintentar mucho aquí quema minutos en vano: un solo
-                    # reintento corto (podría ser un pico) y si persiste,
-                    # marcamos rate_limited: la pasada entera se corta y el
-                    # launcher espera al reset (los docs quedan pendientes).
-                    if i >= 1:
-                        self.rate_limited = True
-                        return None
-                    time.sleep(8 + random.randint(0, 4))
-                    continue
+                    # rate limit. Plan gratuito: ~230 RPD por key. Si hay más
+                    # keys, rotar (cada key duplica el tope diario). Cuando
+                    # todas están agotadas, cortar la pasada (rate_limited) y
+                    # esperar al reset en vez de fallar doc por doc.
+                    if self._rotar_key():
+                        continue  # nueva key, reintentar de inmediato
+                    self.rate_limited = True
+                    return None
                 if r.status_code in (500, 503):
                     if i >= 3:
                         return None
