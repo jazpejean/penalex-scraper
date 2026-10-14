@@ -372,16 +372,18 @@ async def recorrer(sb: Supabase, sala: str, aplicar: bool, max_dias: int, anio_f
                             "parrafo_evidencia": c["extracto"],
                             "tipo": "jurisprudencia",
                         })
-                    # 4) poblar extracto de la sentencia con el criterio (el
-                    #    trigger recalcula search_vector: así la búsqueda
-                    #    fulltext de la app encuentra la sentencia por su texto)
+                    # 4) poblar extracto Y ratio_decidendi de la sentencia con
+                    #    el criterio oficial (el trigger recalcula search_vector:
+                    #    así la búsqueda fulltext encuentra la sentencia por su
+                    #    texto y la ficha técnica muestra el ratio real)
                     extracto_completo = "\n\n".join(
                         c["extracto"].strip() for c in lista if c.get("extracto")
                     )
                     if extracto_completo:
                         sb._r(f"sentencias?id=eq.{sid}", "PATCH",
                               headers={"Prefer": "return=minimal"},
-                              json={"extracto": extracto_completo[:3000]})
+                              json={"extracto": extracto_completo[:3000],
+                                    "ratio_decidendi": extracto_completo[:3000]})
                     marcadas += 1
                     reemplazadas += len(pendientes)
 
