@@ -1,0 +1,8 @@
+name = "penalex-leer"
+main = "src/index_leer.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+SUPABASE_URL = "https://efxzcglhyosrxtafirhs.supabase.co"
+R2_PUBLIC_URL = "https://pub-ccca0a4f4395464da7752af871c16943.r2.dev"
+PARSER_V = "6.1"
