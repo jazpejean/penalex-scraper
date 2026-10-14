@@ -128,7 +128,9 @@ class AnalizadorIA:
         # CORTAR la pasada y esperar al reset en vez de fallar doc por doc.
         self.rate_limited = False
         self._s = requests.Session()
-        # Gemini gana si está presente su key; si no, Workers AI (fallback).
+        # Gemini gana si está presente su key; Workers AI (Qwen) como canal
+        # paralelo: cuando Gemini agota su RPD diario, el lote cambia a Qwen
+        # (gratis, sin RPD) y sigue procesando en vez de dormir hasta el reset.
         if cfg.gemini_api_keys:
             self.proveedor = "gemini"
             # Rotación de keys gratis: cada key tiene ~230 RPD/día;
@@ -145,6 +147,20 @@ class AnalizadorIA:
                 "Authorization": f"Bearer {cfg.cf_api_key}",
                 "Content-Type": "application/json",
             })
+
+    def _cambiar_a_workers(self) -> bool:
+        """Cambia el proveedor activo a Cloudflare Workers AI (Qwen) cuando
+        Gemini agotó su RPD diario. Devuelve True si hay key de Workers AI."""
+        if not self.cfg.cf_api_key:
+            return False
+        self.proveedor = "workers"
+        self.rate_limited = False
+        self._s.headers.update({
+            "Authorization": f"Bearer {self.cfg.cf_api_key}",
+            "Content-Type": "application/json",
+        })
+        print("      [fallback] Gemini agotado -> Workers AI (Qwen)", flush=True)
+        return True
 
     def _rotar_key(self) -> bool:
         """Cambia a la siguiente key Gemini. False si todas quedaron agotadas."""
@@ -223,10 +239,14 @@ class AnalizadorIA:
                 if r.status_code == 429:
                     # rate limit. Plan gratuito: ~230 RPD por key. Si hay más
                     # keys, rotar (cada key duplica el tope diario). Cuando
-                    # todas están agotadas, cortar la pasada (rate_limited) y
-                    # esperar al reset en vez de fallar doc por doc.
-                    if self._rotar_key():
+                    # todas están agotadas, pasar al canal Workers AI (Qwen,
+                    # gratis, sin RPD); si tampoco hay Workers, cortar la
+                    # pasada (rate_limited) y esperar al reset.
+                    if self.proveedor == "gemini" and self._rotar_key():
                         continue  # nueva key, reintentar de inmediato
+                    if self.proveedor == "gemini" and self._cambiar_a_workers():
+                        body["model"] = self._modelo(modelo)  # Qwen
+                        continue  # reintentar este doc con Qwen
                     self.rate_limited = True
                     return None
                 if r.status_code in (500, 503):
