@@ -61,6 +61,11 @@ class Config:
     r2_public_url: str = "https://pub-ccca0a4f4395464da7752af871c16943.r2.dev"
     cf_account_id: str = DEFAULT_CF_ACCOUNT_ID
     cf_api_key: Optional[str] = None
+    cf_api_email: Optional[str] = None  # Global Key (cfk_) usa X-Auth-Email
+    # Varias cuentas Workers AI: cada una tiene su propio tope diario de
+    # neuronas en el plan gratuito; el analizador rota entre ellas cuando
+    # una devuelve 429. Cada entrada: (account_id, api_key, email_opcional).
+    cf_accounts: list = field(default_factory=list)
     gemini_api_key: Optional[str] = None
     gemini_api_keys: list = field(default_factory=list)  # varias keys gratis (RPD xN)
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai"
@@ -93,6 +98,7 @@ class Config:
             cf_api_key=os.environ.get("CLOUDFLARE_WORKERS_AI_API_KEY")
             or os.environ.get("CF_AI_API_KEY")
             or os.environ.get("CUSTOMOPENAI_API_KEY"),
+            cf_api_email=os.environ.get("CF_AI_EMAIL"),
             gemini_api_key=os.environ.get("GEMINI_API_KEY"),
             gemini_base_url=os.environ.get(
                 "GEMINI_BASE_URL",
@@ -115,6 +121,23 @@ class Config:
         keys = [k.strip() for k in raw.split(",") if k.strip()]
         c.gemini_api_keys = keys
         c.gemini_api_key = keys[0] if keys else c.gemini_api_key
+        # Cuentas Workers AI disponibles (rotación cuando una agota neuronas):
+        # la principal + cuentas adicionales *_2, *_3, ... en el .env.
+        cuentas = []
+        principal = (
+            os.environ.get("CF_AI_ACCOUNT_ID", DEFAULT_CF_ACCOUNT_ID),
+            c.cf_api_key,
+            os.environ.get("CF_AI_EMAIL"),
+        )
+        if principal[1]:
+            cuentas.append(principal)
+        for sufijo in ("2", "3", "4", "5"):
+            acc = os.environ.get(f"CF_AI_ACCOUNT_ID_{sufijo}")
+            key = os.environ.get(f"CF_AI_API_KEY_{sufijo}") \
+                or os.environ.get(f"CLOUDFLARE_WORKERS_AI_API_KEY_{sufijo}")
+            if acc and key:
+                cuentas.append((acc, key, os.environ.get(f"CF_AI_EMAIL_{sufijo}")))
+        c.cf_accounts = cuentas
         c._requeridos = {
             "scrape": ["worker_url", "ingest_token"],
             "ia": [("cf_api_key", "gemini_api_key")],

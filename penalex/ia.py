@@ -143,10 +143,37 @@ class AnalizadorIA:
             })
         else:
             self.proveedor = "workers"
-            self._s.headers.update({
-                "Authorization": f"Bearer {cfg.cf_api_key}",
-                "Content-Type": "application/json",
-            })
+            # Varias cuentas Workers AI (cada una con su tope de neuronas/día):
+            # se rota entre ellas cuando una devuelve 429.
+            self._cuentas = list(cfg.cf_accounts)
+            self._cuenta_idx = 0
+            self._aplicar_headers_workers()
+
+    def _aplicar_headers_workers(self) -> None:
+        """Headers según la cuenta Workers AI activa: Bearer (token cfut_) o
+        X-Auth-Key + X-Auth-Email (Global Key cfk_, como la cuenta nueva)."""
+        cuenta = self._cuentas[self._cuenta_idx]
+        acc, key, email = cuenta
+        h = {"Content-Type": "application/json"}
+        if email:
+            h["X-Auth-Key"] = key
+            h["X-Auth-Email"] = email
+        else:
+            h["Authorization"] = f"Bearer {key}"
+        self._s.headers.update(h)
+
+    def _rotar_cuenta_workers(self) -> bool:
+        """Cambia a la siguiente cuenta Workers AI (otra cuenta => otro tope
+        diario de neuronas). False si todas quedaron agotadas."""
+        if self.proveedor != "workers" or len(self._cuentas) <= 1:
+            return False
+        if self._cuenta_idx + 1 < len(self._cuentas):
+            self._cuenta_idx += 1
+            self._aplicar_headers_workers()
+            print(f"      [cuenta CF] rotando a cuenta #{self._cuenta_idx + 1} "
+                  f"de {len(self._cuentas)}", flush=True)
+            return True
+        return False
 
     def _cambiar_a_workers(self) -> bool:
         """Cambia el proveedor activo a Cloudflare Workers AI (Qwen) cuando
@@ -155,10 +182,9 @@ class AnalizadorIA:
             return False
         self.proveedor = "workers"
         self.rate_limited = False
-        self._s.headers.update({
-            "Authorization": f"Bearer {self.cfg.cf_api_key}",
-            "Content-Type": "application/json",
-        })
+        self._cuentas = list(self.cfg.cf_accounts)
+        self._cuenta_idx = 0
+        self._aplicar_headers_workers()
         print("      [fallback] Gemini agotado -> Workers AI (Qwen)", flush=True)
         return True
 
@@ -183,7 +209,8 @@ class AnalizadorIA:
         # Workers AI: /ai/run nativo (techo ~38 req/min) en vez del
         # OpenAI-compat /ai/v1/chat/completions (techo ~3-5 req/min).
         m = modelo or self.cfg.modelo_analisis
-        return f"{self.cfg.api_base_run()}/{m}"
+        acc = self._cuentas[self._cuenta_idx][0]  # account_id de la cuenta activa
+        return f"https://api.cloudflare.com/client/v4/accounts/{acc}/ai/run/{m}"
 
     def _modelo(self, modelo: Optional[str]) -> str:
         """Nombre del modelo a usar según el proveedor activo."""
@@ -237,16 +264,18 @@ class AnalizadorIA:
                     return data
                 ultimo = f"HTTP {r.status_code}: {r.text[:120]}"
                 if r.status_code == 429:
-                    # rate limit. Plan gratuito: ~230 RPD por key. Si hay más
-                    # keys, rotar (cada key duplica el tope diario). Cuando
-                    # todas están agotadas, pasar al canal Workers AI (Qwen,
-                    # gratis, sin RPD); si tampoco hay Workers, cortar la
-                    # pasada (rate_limited) y esperar al reset.
+                    # rate limit. Plan gratuito: ~230 RPD por key Gemini.
+                    # Gemini: rotar keys; al agotarlas, pasar a Workers AI.
+                    # Workers AI: rotar entre cuentas CF (cada una tiene su
+                    # tope diario de neuronas). Si todo está agotado, cortar
+                    # la pasada (rate_limited) y esperar al reset.
                     if self.proveedor == "gemini" and self._rotar_key():
                         continue  # nueva key, reintentar de inmediato
                     if self.proveedor == "gemini" and self._cambiar_a_workers():
                         body["model"] = self._modelo(modelo)  # Qwen
                         continue  # reintentar este doc con Qwen
+                    if self.proveedor == "workers" and self._rotar_cuenta_workers():
+                        continue  # otra cuenta CF, reintentar
                     self.rate_limited = True
                     return None
                 if r.status_code in (500, 503):
