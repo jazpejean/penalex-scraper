@@ -30,6 +30,7 @@ Uso:
   (sin --aplicar = modo dry-run: solo muestra qué se marcaría/reemplazaría)
 """
 import argparse, asyncio, base64, os, re, sys, html as H
+from datetime import datetime, timezone
 import requests as plain_requests
 
 sys.path.insert(0, ".")
@@ -353,10 +354,12 @@ async def recorrer(sb: Supabase, sala: str, aplicar: bool, max_dias: int, anio_f
                         reemplazadas += len(pendientes)
                         continue
 
-                    # 1) marcar es_jurisprudencia
+                    # 1) marcar es_jurisprudencia (su análisis ya existe: el
+                    #    criterio oficial; analyzed_at evita que parezca pendiente)
                     ok1 = sb._r(f"sentencias?id=eq.{sid}", "PATCH",
                                 headers={"Prefer": "return=minimal"},
-                                json={"es_jurisprudencia": True})
+                                json={"es_jurisprudencia": True,
+                                      "analyzed_at": datetime.now(timezone.utc).isoformat()})
                     if not ok1.ok:
                         print(f"      ⚠️ no se pudo marcar {sid}: {ok1.status_code}", flush=True)
                     # 2) borrar doctrinas previas (reemplazo: oficiales iguales
@@ -369,6 +372,16 @@ async def recorrer(sb: Supabase, sala: str, aplicar: bool, max_dias: int, anio_f
                             "parrafo_evidencia": c["extracto"],
                             "tipo": "jurisprudencia",
                         })
+                    # 4) poblar extracto de la sentencia con el criterio (el
+                    #    trigger recalcula search_vector: así la búsqueda
+                    #    fulltext de la app encuentra la sentencia por su texto)
+                    extracto_completo = "\n\n".join(
+                        c["extracto"].strip() for c in lista if c.get("extracto")
+                    )
+                    if extracto_completo:
+                        sb._r(f"sentencias?id=eq.{sid}", "PATCH",
+                              headers={"Prefer": "return=minimal"},
+                              json={"extracto": extracto_completo[:3000]})
                     marcadas += 1
                     reemplazadas += len(pendientes)
 
