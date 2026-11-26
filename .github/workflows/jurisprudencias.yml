@@ -44,6 +44,12 @@ jobs:
           INGEST_TOKEN=${{ secrets.INGEST_TOKEN }}
           EOF
 
+      - name: Diagnostico portal
+        run: |
+          curl -s -o /tmp/portal.html -w "HTTP %{http_code} | %{size_download} bytes\n"             -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"             "https://www.tsj.gob.ve/es/web/tsj/juriprudencias" || true
+          grep -c "numero-dia\|select_years\|years" /tmp/portal.html || true
+          head -c 400 /tmp/portal.html || true
+
       - name: Sala Constitucional
         if: ${{ github.event.inputs.sala == 'scon' || github.event.inputs.sala == 'ambas' || github.event_name == 'schedule' }}
         run: python scraper_juri.py --sala scon --aplicar
