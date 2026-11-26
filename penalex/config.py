@@ -70,6 +70,11 @@ class Config:
     gemini_api_keys: list = field(default_factory=list)  # varias keys gratis (RPD xN)
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai"
     gemini_model: str = "gemini-flash-lite-latest"
+    # Canal puter.com: tokens de sesión de cuentas gratuitas (se rotan entre
+    # cuentas cuando una devuelve 429/402, igual que las keys de Gemini).
+    puter_tokens: list = field(default_factory=list)
+    puter_model: str = "deepseek-v4.1-flash"
+    puter_base_url: str = "https://api.puter.com/drivers/call"
     max_chars_texto: int = 60000
     min_chars_analisis: int = 3000
     modelo_analisis: str = MODEL_ANALISIS_DEFAULT
@@ -105,6 +110,9 @@ class Config:
                 "https://generativelanguage.googleapis.com/v1beta/openai",
             ),
             gemini_model=os.environ.get("GEMINI_MODEL", "gemini-flash-lite-latest"),
+            puter_model=os.environ.get("PUTER_MODEL", "deepseek-v4.1-flash"),
+            puter_base_url=os.environ.get("PUTER_BASE_URL",
+                                          "https://api.puter.com/drivers/call"),
             max_chars_texto=int(os.environ.get("MAX_CHARS_TEXTO", "60000")),
             min_chars_analisis=int(os.environ.get("MIN_CHARS_ANALISIS", "3000")),
             modelo_analisis=os.environ.get("MODEL_ANALISIS", MODEL_ANALISIS_DEFAULT),
@@ -121,6 +129,10 @@ class Config:
         keys = [k.strip() for k in raw.split(",") if k.strip()]
         c.gemini_api_keys = keys
         c.gemini_api_key = keys[0] if keys else c.gemini_api_key
+        # Tokens de puter.com (sesiones de cuentas gratuitas, separadas por
+        # coma): se rotan entre cuentas cuando una devuelve 429/402.
+        raw_puter = (os.environ.get("PUTER_TOKENS") or "").replace("\n", ",")
+        c.puter_tokens = [t.strip() for t in raw_puter.split(",") if t.strip()]
         # Cuentas Workers AI disponibles (rotación cuando una agota neuronas):
         # la principal + cuentas adicionales *_2, *_3, ... en el .env.
         cuentas = []
@@ -140,7 +152,7 @@ class Config:
         c.cf_accounts = cuentas
         c._requeridos = {
             "scrape": ["worker_url", "ingest_token"],
-            "ia": [("cf_api_key", "gemini_api_key")],
+            "ia": [("cf_api_key", "gemini_api_key", "puter_tokens")],
             "supabase": ["supabase_url", "supabase_key"],
             "qdrant": ["qdrant_url", "qdrant_api_key"],
         }

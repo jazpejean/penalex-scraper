@@ -151,8 +151,38 @@ class Supabase:
         )
         return r.ok
 
-    def guardar_doctrina(self, sentencia_id: str, doctrina: dict) -> Optional[str]:
+    def borrar_citas_doctrinales(self, sentencia_id: str) -> bool:
+        """Borra las citas a doctrina académica de una sentencia (idempotencia)."""
+        r = self._r(
+            f"doctrinas_academicas?sentencia_id=eq.{sentencia_id}", "DELETE",
+            headers={"Prefer": "return=minimal"},
+        )
+        return r.ok
+
+    def guardar_cita_doctrinal(self, sentencia_id: str, cita: dict) -> bool:
+        """Guarda una cita a doctrina académica (autor/obra/párrafo/página)."""
+        import uuid as _uuid
         payload = {
+            "id": str(_uuid.uuid4()),
+            "sentencia_id": sentencia_id,
+            "autor": str(cita.get("autor") or "").strip() or None,
+            "obra": str(cita.get("obra") or "").strip() or None,
+            "parrafo_evidencia": str(
+                cita.get("parrafo_evidencia") or cita.get("cita") or "").strip() or None,
+            "pagina": str(cita.get("pagina") or "").strip() or None,
+        }
+        if not payload["parrafo_evidencia"] and not payload["autor"]:
+            return False
+        r = self._r("doctrinas_academicas", "POST",
+                    headers={"Prefer": "return=minimal"}, json=payload)
+        return r.ok
+
+    def guardar_doctrina(self, sentencia_id: str, doctrina: dict) -> Optional[str]:
+        import uuid as _uuid
+        payload = {
+            # id uuid NOT NULL SIN default en la tabla: hay que generarlo aquí
+            # (sin él el INSERT falla con 23502 y no se guarda ninguna doctrina).
+            "id": str(_uuid.uuid4()),
             "sentencia_id": sentencia_id,
             "texto_ratio": (doctrina.get("texto_ratio") or "")[:3000],
             "tipo": doctrina.get("tipo", "interpretacion"),
@@ -219,13 +249,19 @@ class Supabase:
         return r.ok
 
     def pendientes_ia(self, anio: Optional[int] = None, sala: Optional[str] = None,
-                      limite: int = 500, excluir: Optional[set] = None) -> list[dict]:
+                      limite: int = 500, excluir: Optional[set] = None,
+                      mes_ini: Optional[int] = None,
+                      mes_fin: Optional[int] = None) -> list[dict]:
         """Sentencias ingresadas que aún no tienen análisis (analyzed_at null).
 
         Si `excluir` trae ids ya intentados en esta ejecución, se avanzan con
         paginación estable (order=id + offset) hasta juntar `limite` filas
         nuevas; así cada pasada procesa docs distintos y converge aunque
         muchos pendientes fallen (flakiness del modelo).
+
+        mes_ini/mes_fin (1-12): restringe a sentencias cuyo campo `fecha`
+        (texto "N de MES de AÑO") cae en ese rango de meses — permite partir
+        un año en franjas disjuntas entre canales.
         """
         excluir = set(excluir or [])
         params = {
@@ -238,6 +274,17 @@ class Supabase:
             params["anio"] = f"eq.{anio}"
         if sala:
             params["sala"] = f"eq.{sala}"
+        if mes_ini or mes_fin:
+            meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio",
+                     "julio", "agosto", "septiembre", "octubre", "noviembre",
+                     "diciembre"]
+            lo = (mes_ini or 1) - 1
+            hi = (mes_fin or 12)
+            elegidos = [meses[i] for i in range(lo, hi) if 0 <= i < 12]
+            if elegidos:
+                # OR de ilike sobre el nombre del mes en el texto `fecha`
+                params["or"] = "(" + ",".join(
+                    f"fecha.ilike.%{m}%" for m in elegidos) + ")"
         if not excluir:
             r = self._r("sentencias", "GET", params={**params, "limit": str(limite)})
             return r.json() if r.ok else []

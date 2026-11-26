@@ -368,7 +368,7 @@ async def recorrer(sb: Supabase, sala: str, aplicar: bool, max_dias: int, anio_f
                     # 3) guardar CADA extracto oficial como doctrina
                     for c in lista:
                         sb.guardar_doctrina(sid, {
-                            "texto_ratio": c["extracto"][:3000],
+                            "texto_ratio": c["extracto"],
                             "parrafo_evidencia": c["extracto"],
                             "tipo": "jurisprudencia",
                         })
@@ -380,10 +380,13 @@ async def recorrer(sb: Supabase, sala: str, aplicar: bool, max_dias: int, anio_f
                         c["extracto"].strip() for c in lista if c.get("extracto")
                     )
                     if extracto_completo:
+                        ec = extracto_completo.strip()
+                        if ec and ec[-1] not in ".;…":
+                            ec = ec + "."
                         sb._r(f"sentencias?id=eq.{sid}", "PATCH",
                               headers={"Prefer": "return=minimal"},
-                              json={"extracto": extracto_completo[:3000],
-                                    "ratio_decidendi": extracto_completo[:3000]})
+                              json={"extracto": ec,
+                                    "ratio_decidendi": ec})
                     marcadas += 1
                     reemplazadas += len(pendientes)
 

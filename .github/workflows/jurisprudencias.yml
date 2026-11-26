@@ -1,0 +1,53 @@
+name: Jurisprudencias TSJ
+
+# Extrae los extractos oficiales de la sección de jurisprudencias del TSJ
+# y los sincroniza con Supabase. Corre cada 6 horas sin depender de la PC.
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      sala:
+        description: 'Sala a procesar (scon | scp | ambas)'
+        required: false
+        default: 'ambas'
+
+jobs:
+  jurisprudencias:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright requests urllib3 python-dotenv curl_cffi
+
+      - name: Navegador
+        run: python -m playwright install --with-deps chromium
+
+      - name: Configuracion
+        run: |
+          cat > .env <<EOF
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }}
+          WORKER_URL=${{ secrets.WORKER_URL }}
+          INGEST_TOKEN=${{ secrets.INGEST_TOKEN }}
+          EOF
+
+      - name: Sala Constitucional
+        if: ${{ github.event.inputs.sala == 'scon' || github.event.inputs.sala == 'ambas' || github.event_name == 'schedule' }}
+        run: python scraper_juri.py --sala scon --aplicar
+
+      - name: Sala de Casacion Penal
+        if: ${{ github.event.inputs.sala == 'scp' || github.event.inputs.sala == 'ambas' || github.event_name == 'schedule' }}
+        run: python scraper_juri.py --sala scp --aplicar

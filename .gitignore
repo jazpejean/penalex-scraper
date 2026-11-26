@@ -7,3 +7,35 @@ __pycache__/
 node_modules/
 .wrangler/
 .dev.vars
+
+# Secretos locales — NUNCA commitear
+.sbkey
+.ingest_token
+.worker_url
+.backfill_token
+*.key
+secrets_backup.json
+
+# Salidas del pipeline
+checkpoints/
+reports/
+tests/fixtures/*.html
+# --- archivos con credenciales (NO subir) ---
+audit_cloud_*.py
+corregir_fecha_2000.py
+generar_indice_leyes.py
+lanzar_gemini_*.sh
+subir_analisis_cloud.py
+espejar_directo.py
+espejar_masivo.py
+reparar_logo_graficos.py
+DEPLOYERS
+.env.bak*
+leyes_bak/
+espejar_qdrant_cloud.py
+*.sh.bak
+*.py.bak
+.env*
+sincronizar_analisis_pendiente.py
+sincronizar_local.py
+sincronizar_*.py
